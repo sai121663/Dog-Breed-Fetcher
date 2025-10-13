@@ -3,6 +3,7 @@ package dogapi;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -31,6 +32,10 @@ public class DogApiBreedFetcher implements BreedFetcher {
         //      as well as the code for parsing JSON responses.
         // return statement included so that the starter code can compile and run.
 
+        if (breed == null) {
+            throw new BreedNotFoundException(breed);
+        }
+
         String url = "https://dog.ceo/api/breed/" + breed + "/list";
         Request request = new Request.Builder().url(url).build();
 
@@ -40,11 +45,30 @@ public class DogApiBreedFetcher implements BreedFetcher {
                 throw new BreedNotFoundException(breed);
             }
 
+            ResponseBody body = response.body(); // gets the response body
+            if (body == null) {
+                throw new BreedNotFoundException(breed);
+            }
+
+            String jsonData = body.string(); // converts the response body to a string
+            JSONObject json = new JSONObject(jsonData);
+
+            String status = json.optString("status"); // gets whether "status" is success or error
+            if (!"success".equals(status)) {
+                 throw new BreedNotFoundException(breed);
+            }
+
+            JSONArray arr = json.getJSONArray("message");
+            List <String> subBreeds = new ArrayList<>();
+            for (int i = 0; i < arr.length(); i++) {
+                subBreeds.add(arr.getString(i));
+            }
+
+            return subBreeds;
         }
         catch (IOException e) {
             throw new BreedNotFoundException(breed);
         }
 
-        return new ArrayList<>();
     }
 }
